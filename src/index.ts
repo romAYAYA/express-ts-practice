@@ -1,9 +1,9 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 
-const app = express()
-const port = 3000
+export const app = express()
+const port = process.env.PORT || 3000
 
-const HTTP_STATUSES = {
+export const HTTP_STATUSES = {
   OK_200: 200,
   CREATED_201: 201,
   NO_CONTENT: 204,
@@ -16,61 +16,65 @@ const jsonBodyMiddleware = express.json()
 app.use(jsonBodyMiddleware)
 
 const db = {
-  courses: [
-    { id: 1, title: 'front-end' },
-    { id: 2, title: 'back-end' },
-    { id: 3, title: 'automation qa' },
-    { id: 4, title: 'devops' },
+  products: [
+    { id: 1, title: 'tomato' },
+    { id: 2, title: 'orange' },
+    { id: 3, title: 'juice' },
+    { id: 4, title: 'laptop' },
   ],
 }
 
-app.get('/courses', (req, res) => {
-  let courses = db.courses
+app.get('/products', (req: Request, res: Response) => {
+  let products = db.products
 
   if (req.query.title) {
-    courses = courses.filter(
-      (c) => c.title.indexOf(req.query.title as string) > -1
+    products = products.filter(
+      (p) => p.title.indexOf(req.query.title as string) > -1
     )
   }
 
-  res.json(courses)
+  res.json(products)
 })
-app.get('/courses/:id', (req, res) => {
-  const course = db.courses.find((c) => c.id === +req.params.id)
 
-  if (!course) {
+app.get('/products/:id', (req: Request, res: Response) => {
+  const product = db.products.find((p) => p.id === +req.params.id)
+
+  if (!product) {
     res.sendStatus(HTTP_STATUSES.NOT_FOUND)
     return
   }
 
-  res.json(course)
+  res.json(product)
 })
-app.post('/courses', (req, res) => {
+
+app.post('/products', (req: Request, res: Response) => {
   if (!req.body.title) {
     res.sendStatus(HTTP_STATUSES.BAD_REQUEST)
     return
   }
 
-  const course = {
+  const product = {
     id: +new Date(),
     title: req.body.title || 'unknown',
   }
 
-  db.courses.push(course)
-  res.status(HTTP_STATUSES.CREATED_201).json(course)
+  db.products.push(product)
+  res.status(HTTP_STATUSES.CREATED_201).json(product)
 })
-app.delete('/courses/:id', (req, res) => {
-  db.courses = db.courses.filter((c) => c.id !== +req.params.id)
+
+app.delete('/products/:id', (req: Request, res: Response) => {
+  db.products = db.products.filter((p) => p.id !== +req.params.id)
 
   res.sendStatus(HTTP_STATUSES.NO_CONTENT)
 })
-app.put('/courses/:id', (req, res) => {
+
+app.put('/products/:id', (req: Request, res: Response) => {
   if (!req.body.title) {
     res.sendStatus(HTTP_STATUSES.BAD_REQUEST)
     return
   }
 
-  const course = db.courses.find((c) => c.id === +req.params.id)
+  const course = db.products.find((p) => p.id === +req.params.id)
 
   if (!course) {
     res.sendStatus(HTTP_STATUSES.NOT_FOUND)
@@ -82,6 +86,11 @@ app.put('/courses/:id', (req, res) => {
   res.sendStatus(HTTP_STATUSES.NO_CONTENT)
 })
 
+app.delete('/__test__/data', (req: Request, res: Response) => {
+  db.products = []
+  res.sendStatus(HTTP_STATUSES.NO_CONTENT)
+})
+
 app.listen(port, () => {
-  console.log(`Port: ${port}`)
+  console.log(`The app is Running on: http://localhost:${port}`)
 })
