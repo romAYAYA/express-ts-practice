@@ -1,5 +1,7 @@
 import request from 'supertest'
 import { HTTP_STATUSES, app } from '../../src'
+import { CreateProductModel } from '../../src/models/CreateProductModel'
+import { UpdateProductModel } from '../../src/models/UpdateProductModel'
 
 describe('/products', () => {
   beforeAll(async () => {
@@ -11,24 +13,19 @@ describe('/products', () => {
   })
 
   it('should return 404 for not existing product', async () => {
-    await request(app)
-      .get('/products/989898989')
-      .expect(HTTP_STATUSES.NOT_FOUND)
+    await request(app).get('/products/989898989').expect(HTTP_STATUSES.NOT_FOUND)
   })
 
   it("shouldn't create product with correct input data", async () => {
-    await request(app)
-      .post('/products')
-      .send({ title: '' })
-      .expect(HTTP_STATUSES.BAD_REQUEST)
+    const data: CreateProductModel = { title: '' }
+
+    await request(app).post('/products').send(data).expect(HTTP_STATUSES.BAD_REQUEST)
   })
 
   let createdProduct: any = null
   it('should create product with correct input data', async () => {
-    const createdRes = await request(app)
-      .post('/products')
-      .send({ title: 'duck' })
-      .expect(HTTP_STATUSES.CREATED_201)
+    const data: CreateProductModel = { title: 'duck' }
+    const createdRes = await request(app).post('/products').send(data).expect(HTTP_STATUSES.CREATED_201)
 
     createdProduct = createdRes.body
 
@@ -37,34 +34,31 @@ describe('/products', () => {
       title: 'duck',
     })
 
-    await request(app)
-      .get('/products')
-      .expect(HTTP_STATUSES.OK_200, [createdProduct])
+    await request(app).get('/products').expect(HTTP_STATUSES.OK_200, [createdProduct])
   })
 
   let createdProduct2: any = null
   it('should create one more product', async () => {
-    const createdRes = await request(app)
-      .post('/products')
-      .send({ title: 'duck 2' })
-      .expect(HTTP_STATUSES.CREATED_201)
+    const data: CreateProductModel = { title: 'duck 2' }
+
+    const createdRes = await request(app).post('/products').send(data).expect(HTTP_STATUSES.CREATED_201)
 
     createdProduct2 = createdRes.body
 
     expect(createdProduct2).toEqual({
       id: expect.any(Number),
-      title: 'duck 2',
+      title: data.title,
     })
 
-    await request(app)
-      .get('/products')
-      .expect(HTTP_STATUSES.OK_200, [createdProduct, createdProduct2])
+    await request(app).get('/products').expect(HTTP_STATUSES.OK_200, [createdProduct, createdProduct2])
   })
 
   it("shouldn't update product with correct input data", async () => {
+    const data: UpdateProductModel = { title: '' }
+
     await request(app)
       .put('/products/' + createdProduct.id)
-      .send({ title: '' })
+      .send(data)
       .expect(HTTP_STATUSES.BAD_REQUEST)
 
     await request(app)
@@ -73,23 +67,27 @@ describe('/products', () => {
   })
 
   it("shouldn't update product which doesn't exist", async () => {
+    const data: UpdateProductModel = { title: 'duck' }
+
     await request(app)
       .put('/products/' + -100)
-      .send({ title: 'duck' })
+      .send(data)
       .expect(HTTP_STATUSES.NOT_FOUND)
   })
 
   it('should update product with correct input data', async () => {
+    const data: UpdateProductModel = { title: 'new duck' }
+    
     await request(app)
       .put('/products/' + createdProduct.id)
-      .send({ title: 'new duck' })
+      .send(data)
       .expect(HTTP_STATUSES.NO_CONTENT)
 
     await request(app)
       .get('/products/' + createdProduct.id)
       .expect(HTTP_STATUSES.OK_200, {
         ...createdProduct,
-        title: 'new duck',
+        title: data.title,
       })
 
     await request(app)
@@ -114,8 +112,6 @@ describe('/products', () => {
       .get('/products/' + createdProduct2.id)
       .expect(HTTP_STATUSES.NOT_FOUND)
 
-    await request(app)
-      .get('/products/')
-      .expect(HTTP_STATUSES.OK_200, [])
+    await request(app).get('/products/').expect(HTTP_STATUSES.OK_200, [])
   })
 })
