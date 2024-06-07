@@ -57,3 +57,5 @@ tsconfig.tsbuildinfo
 .env
 .env.test
 .env.production
+
+.idea
