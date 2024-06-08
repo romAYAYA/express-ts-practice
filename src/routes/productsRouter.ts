@@ -5,38 +5,27 @@ import { ProductViewModel } from '../models/ProductViewModel'
 import { UpdateProductModel } from '../models/UpdateProductModel'
 import { URIParamsProductIdModel } from '../models/URIParamsProductIdModel'
 import { RequestWithQuery, RequestWithParams, RequestWithBody, RequestWithParamsAndBody } from '../types'
-import { ProductType, dbType } from '../db/db'
 import { HTTP_STATUSES } from '../utils'
+import { productsRepository } from '../repositories/productsRepository'
 
-const getProductViewModel = (dbProduct: ProductType): ProductViewModel => {
-  return {
-    id: dbProduct.id,
-    title: dbProduct.title,
-  }
-}
-
-export const getProductsRoutes = (db: dbType) => {
+export const getProductsRoutes = () => {
   const router = express.Router()
 
   router.get('/', (req: RequestWithQuery<GetProductsModel>, res: Response<ProductViewModel[]>) => {
-    let foundProducts = db.products
+    const foundProducts = productsRepository.findProducts(req.query.title || null)
 
-    if (req.query.title) {
-      foundProducts = foundProducts.filter((p) => p.title.indexOf(req.query.title as string) > -1)
-    }
-
-    res.json(foundProducts.map(getProductViewModel))
+    res.json(foundProducts)
   })
 
   router.get('/:id', (req: RequestWithParams<URIParamsProductIdModel>, res: Response<ProductViewModel>) => {
-    const foundProduct = db.products.find((p) => p.id === +req.params.id)
+    const foundProduct = productsRepository.findProductById(+req.params.id || null)
 
     if (!foundProduct) {
       res.sendStatus(HTTP_STATUSES.NOT_FOUND)
       return
     }
 
-    res.json(getProductViewModel(foundProduct))
+    res.json(foundProduct)
   })
 
   router.post('/', (req: RequestWithBody<CreateProductModel>, res: Response<ProductViewModel>) => {
@@ -45,19 +34,13 @@ export const getProductsRoutes = (db: dbType) => {
       return
     }
 
-    const createdProduct: ProductType = {
-      id: +new Date(),
-      title: req.body.title || 'unknown',
-      productsCount: 0,
-    }
+    const createdProduct = productsRepository.createProduct(req.body.title)
 
-    db.products.push(createdProduct)
-
-    res.status(HTTP_STATUSES.CREATED_201).json(getProductViewModel(createdProduct))
+    res.status(HTTP_STATUSES.CREATED_201).json(createdProduct)
   })
 
   router.delete('/:id', (req: RequestWithParams<URIParamsProductIdModel>, res: Response) => {
-    db.products = db.products.filter((p) => p.id !== +req.params.id)
+    productsRepository.deleteProduct(+req.params.id)
 
     res.sendStatus(HTTP_STATUSES.NO_CONTENT)
   })
@@ -68,14 +51,12 @@ export const getProductsRoutes = (db: dbType) => {
       return
     }
 
-    const course = db.products.find((p) => p.id === +req.params.id)
+    const product = productsRepository.updateProduct(+req.params.id, req.body.title)
 
-    if (!course) {
+    if (!product) {
       res.sendStatus(HTTP_STATUSES.NOT_FOUND)
       return
     }
-
-    course.title = req.body.title
 
     res.sendStatus(HTTP_STATUSES.NO_CONTENT)
   })
