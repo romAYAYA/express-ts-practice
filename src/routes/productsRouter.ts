@@ -15,14 +15,14 @@ const titleValidation = body('title').trim().isLength({ min: 3, max: 30 }).withM
 export const getProductsRoutes = () => {
   const router = express.Router()
 
-  router.get('/', (req: RequestWithQuery<GetProductsModel>, res: Response<ProductViewModel[]>) => {
-    const foundProducts = productsRepository.findProducts(req.query.title || null)
+  router.get('/', async (req: RequestWithQuery<GetProductsModel>, res: Response<ProductViewModel[]>) => {
+    const foundProducts = await productsRepository.findProducts(req.query.title || null)
 
     res.json(foundProducts)
   })
 
-  router.get('/:id', (req: RequestWithParams<URIParamsProductIdModel>, res: Response<ProductViewModel>) => {
-    const foundProduct = productsRepository.findProductById(+req.params.id || null)
+  router.get('/:id', async (req: RequestWithParams<URIParamsProductIdModel>, res: Response<ProductViewModel>) => {
+    const foundProduct = await productsRepository.findProductById(+req.params.id || null)
 
     if (!foundProduct) {
       res.sendStatus(HTTP_STATUSES.NOT_FOUND)
@@ -36,14 +36,14 @@ export const getProductsRoutes = () => {
     '/',
     titleValidation,
     inputValidationMiddleware,
-    (req: RequestWithBody<CreateProductModel>, res: Response<ProductViewModel | ValidationErrorResponse>) => {
-      const createdProduct = productsRepository.createProduct(req.body.title)
+    async (req: RequestWithBody<CreateProductModel>, res: Response<ProductViewModel | ValidationErrorResponse>) => {
+      const createdProduct = await productsRepository.createProduct(req.body.title)
       res.status(HTTP_STATUSES.CREATED_201).json(createdProduct)
     }
   )
 
-  router.delete('/:id', (req: RequestWithParams<URIParamsProductIdModel>, res: Response) => {
-    productsRepository.deleteProduct(+req.params.id)
+  router.delete('/:id', async (req: RequestWithParams<URIParamsProductIdModel>, res: Response) => {
+    await productsRepository.deleteProduct(+req.params.id)
 
     res.sendStatus(HTTP_STATUSES.NO_CONTENT)
   })
@@ -52,8 +52,8 @@ export const getProductsRoutes = () => {
     '/:id',
     titleValidation,
     inputValidationMiddleware,
-    (req: RequestWithParamsAndBody<URIParamsProductIdModel, UpdateProductModel>, res: Response) => {
-      const product = productsRepository.updateProduct(+req.params.id, req.body.title)
+    async (req: RequestWithParamsAndBody<URIParamsProductIdModel, UpdateProductModel>, res: Response) => {
+      const product = await productsRepository.updateProduct(+req.params.id, req.body.title)
       if (!product) {
         res.sendStatus(HTTP_STATUSES.NOT_FOUND)
         return

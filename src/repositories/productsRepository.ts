@@ -9,7 +9,7 @@ const getProductViewModel = (dbProduct: ProductType): ProductViewModel => {
 }
 
 export const productsRepository = {
-  findProducts(title: string | null) {
+  async findProducts(title: string | null) {
     let foundProducts = db.products
 
     if (title) {
@@ -19,7 +19,7 @@ export const productsRepository = {
     return foundProducts.map(getProductViewModel)
   },
 
-  findProductById(id: number | null) {
+  async findProductById(id: number | null) {
     const foundProduct = db.products.find((p) => p.id === id)
     if (!foundProduct) {
       return null
@@ -28,7 +28,7 @@ export const productsRepository = {
     return getProductViewModel(foundProduct)
   },
 
-  createProduct(title: string) {
+  async createProduct(title: string) {
     const createdProduct: ProductType = {
       id: +new Date(),
       title: title || 'unknown',
@@ -40,11 +40,11 @@ export const productsRepository = {
     return getProductViewModel(createdProduct)
   },
 
-  deleteProduct(id: number) {
+  async deleteProduct(id: number) {
     db.products = db.products.filter((p) => p.id !== id)
   },
 
-  updateProduct(id: number, title: string) {
+  async updateProduct(id: number, title: string) {
     const product = db.products.find((p) => p.id === id)
     if (!product) {
       return null
