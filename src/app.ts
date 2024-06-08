@@ -2,11 +2,12 @@ import express from 'express'
 import { getProductsRoutes } from './routes/productsRouter'
 import { db } from './db/db'
 import { getTestsRouter } from './routes/testsRouter'
+import { requestsMiddleware } from './middlewares/requestsMiddleware'
 
 export const app = express()
 
-const jsonBodyMiddleware = express.json()
-app.use(jsonBodyMiddleware)
+app.use(express.json())
+app.use(requestsMiddleware)
 
 app.use('/api/products', getProductsRoutes())
 app.use('/__test__', getTestsRouter(db))
