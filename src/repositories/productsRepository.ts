@@ -1,57 +1,70 @@
-import { db, ProductType } from '../db/db'
-import { ProductViewModel } from '../models/ProductViewModel'
+import pool from '../db/dbConfig'
+// import { ProductViewModel } from '../models/ProductViewModel'
 
-const getProductViewModel = (dbProduct: ProductType): ProductViewModel => {
-  return {
-    id: dbProduct.id,
-    title: dbProduct.title,
-  }
-}
+// const getProductViewModel = (dbProduct: ProductType): ProductViewModel => {
+//   return {
+//     id: dbProduct.id,
+//     title: dbProduct.title,
+//   }
+// }
 
 export const productsRepository = {
   async findProducts(title: string | null) {
-    let foundProducts = db.products
+    try {
+      let query = 'SELECT id, title FROM products'
+      const queryParams = []
 
-    if (title) {
-      foundProducts = foundProducts.filter((p) => p.title.indexOf(title as string) > -1)
+      if (title) {
+        query += ' WHERE title LIKE ?'
+        queryParams.push(`%${title}%`)
+      }
+
+      const [rows] = await pool.query(query, queryParams)
+      return rows
+    } catch (error) {
+      console.error('Error finding products:', error)
+      throw error
     }
-
-    return foundProducts.map(getProductViewModel)
   },
 
   async findProductById(id: number | null) {
-    const foundProduct = db.products.find((p) => p.id === id)
-    if (!foundProduct) {
-      return null
+    try {
+      const [rows] = await pool.query('SELECT id, title FROM products WHERE id = ?', [id])
+      return rows[0] || null
+    } catch (error) {
+      console.error('Error finding product by ID:', error)
+      throw error
     }
-
-    return getProductViewModel(foundProduct)
   },
 
   async createProduct(title: string) {
-    const createdProduct: ProductType = {
-      id: +new Date(),
-      title: title || 'unknown',
-      productsCount: 0,
+    try {
+      const [result] = await pool.query('INSERT INTO products (title, productsCount) VALUES (?, ?)', [title, 0])
+      const [insertedProduct] = await pool.query('SELECT * FROM products WHERE id = ?', [result.insertId])
+      return insertedProduct[0] || null
+    } catch (error) {
+      console.error('Error creating product:', error)
+      throw error
     }
-
-    db.products.push(createdProduct)
-
-    return getProductViewModel(createdProduct)
   },
 
   async deleteProduct(id: number) {
-    db.products = db.products.filter((p) => p.id !== id)
+    try {
+      await pool.query('DELETE FROM products WHERE id = ?', [id])
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      throw error
+    }
   },
 
   async updateProduct(id: number, title: string) {
-    const product = db.products.find((p) => p.id === id)
-    if (!product) {
-      return null
+    try {
+      await pool.query('UPDATE products SET title = ? WHERE id = ?', [title, id])
+      const [updatedProduct] = await pool.query('SELECT id, title FROM products WHERE id = ?', [id])
+      return updatedProduct[0] || null
+    } catch (error) {
+      console.error('Error updating product:', error)
+      throw error
     }
-
-    product.title = title
-
-    return product
   },
 }
