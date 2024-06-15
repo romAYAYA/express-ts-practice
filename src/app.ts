@@ -1,6 +1,6 @@
 import express from 'express'
 import { getProductsRoutes } from './routes/productsRouter'
-import { getTestsRouter } from './routes/testsRouter'
+// import { getTestsRouter } from './routes/testsRouter'
 import { requestsMiddleware } from './middlewares/requestsMiddleware'
 
 export const app = express()
