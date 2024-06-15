@@ -1,12 +1,11 @@
-import pool from '../db/dbConfig'
-// import { ProductViewModel } from '../models/ProductViewModel'
+import { RowDataPacket, ResultSetHeader } from 'mysql2'
+import pool from '../db/connection'
 
-// const getProductViewModel = (dbProduct: ProductType): ProductViewModel => {
-//   return {
-//     id: dbProduct.id,
-//     title: dbProduct.title,
-//   }
-// }
+interface ProductViewModel extends RowDataPacket {
+  id: number
+  title: string
+  productsCount: number
+}
 
 export const productsRepository = {
   async findProducts(title: string | null) {
@@ -19,7 +18,7 @@ export const productsRepository = {
         queryParams.push(`%${title}%`)
       }
 
-      const [rows] = await pool.query(query, queryParams)
+      const [rows] = await pool.query<ProductViewModel[]>(query, queryParams)
       return rows
     } catch (error) {
       console.error('Error finding products:', error)
@@ -29,7 +28,7 @@ export const productsRepository = {
 
   async findProductById(id: number | null) {
     try {
-      const [rows] = await pool.query('SELECT id, title FROM products WHERE id = ?', [id])
+      const [rows] = await pool.query<ProductViewModel[]>('SELECT id, title FROM products WHERE id = ?', [id])
       return rows[0] || null
     } catch (error) {
       console.error('Error finding product by ID:', error)
@@ -39,8 +38,8 @@ export const productsRepository = {
 
   async createProduct(title: string) {
     try {
-      const [result] = await pool.query('INSERT INTO products (title, productsCount) VALUES (?, ?)', [title, 0])
-      const [insertedProduct] = await pool.query('SELECT * FROM products WHERE id = ?', [result.insertId])
+      const [result] = await pool.query<ResultSetHeader>('INSERT INTO products (title, productsCount) VALUES (?, ?)', [title, 0])
+      const [insertedProduct] = await pool.query<ProductViewModel[]>('SELECT * FROM products WHERE id = ?', [result.insertId])
       return insertedProduct[0] || null
     } catch (error) {
       console.error('Error creating product:', error)
@@ -60,7 +59,7 @@ export const productsRepository = {
   async updateProduct(id: number, title: string) {
     try {
       await pool.query('UPDATE products SET title = ? WHERE id = ?', [title, id])
-      const [updatedProduct] = await pool.query('SELECT id, title FROM products WHERE id = ?', [id])
+      const [updatedProduct] = await pool.query<RowDataPacket[]>('SELECT id, title FROM products WHERE id = ?', [id])
       return updatedProduct[0] || null
     } catch (error) {
       console.error('Error updating product:', error)
